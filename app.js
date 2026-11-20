@@ -1,206 +1,222 @@
 
-let laws=[];
-let selected=new Set();
-let activeCategory='الكل';
+let laws = [];
+let selected = new Set();
+let activeCategory = 'الكل';
 
-const el=id=>document.getElementById(id);
+const el = id => document.getElementById(id);
 
-const categoryNames={
-  NAME:'الأسماء',
-  AC:'الحساب',
-  RP:'Roleplay',
-  CHAT:'الدردشة',
-  TCHAT:'دردشة التجارة',
-  ABUSE:'الإساءة',
-  ALERT:'التنبيهات',
-  MEDIA:'الوسائط',
-  CLAN:'الفصائل',
-  MESA:'تعليمات MESA الداخلية'
+const categoryNames = {
+  NAME: 'الأسماء',
+  AC: 'الحساب',
+  RP: 'Roleplay',
+  CHAT: 'الدردشة',
+  TCHAT: 'دردشة التجارة',
+  ABUSE: 'الإساءة',
+  ALERT: 'التنبيهات',
+  MEDIA: 'الوسائط',
+  CLAN: 'الفصائل',
+  MESA: 'تعليمات MESA الداخلية'
 };
 
+const RULES_URL =
+  'https://discord.com/channels/1272600775331414159/1272600775570358357';
+
+// تحميل القوانين
 fetch('data.json')
-  .then(r=>{
-    if(!r.ok)throw Error('data');
+  .then(r => {
+    if (!r.ok) throw Error('data');
     return r.json();
   })
-  .then(data=>{
-    laws=data.laws||[];
+  .then(data => {
+    laws = data.laws || [];
     drawCategories();
     render();
   })
-  .catch(()=>{
-    el('law-list').innerHTML=
+  .catch(() => {
+    el('law-list').innerHTML =
       '<p class="muted">تعذر تحميل القوانين. تأكد من رفع ملف data.json بجانب index.html.</p>';
   });
 
-function categoryOf(l){
-  return categoryNames[l.category]||l.category||'أخرى';
+// تحديد اسم التصنيف
+function categoryOf(l) {
+  return categoryNames[l.category] || l.category || 'أخرى';
 }
 
-function drawCategories(){
-  let cats=['الكل',...new Set(laws.map(categoryOf))];
+// إنشاء التصنيفات
+function drawCategories() {
+  let cats = ['الكل', ...new Set(laws.map(categoryOf))];
 
-  el('categories').innerHTML=cats.map(c=>
-    `<button class="category ${c===activeCategory?'active':''}" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+  el('categories').innerHTML = cats.map(c =>
+    `<button class="category ${c === activeCategory ? 'active' : ''}" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`
   ).join('');
 
-  el('categories').querySelectorAll('button').forEach(b=>{
-    b.onclick=()=>{
-      activeCategory=b.dataset.category;
+  el('categories').querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      activeCategory = b.dataset.category;
       drawCategories();
       render();
     };
   });
 }
 
-function escapeHtml(s){
-  return String(s??'').replace(/[&<>"']/g,c=>({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
+// حماية النصوص
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
   }[c]));
 }
 
-function render(){
-  let q=el('search').value.trim().toLocaleLowerCase();
+// عرض القوانين
+function render() {
+  let q = el('search').value.trim().toLocaleLowerCase();
 
-  let visible=laws.filter(l=>
-    (activeCategory==='الكل'||categoryOf(l)===activeCategory)&&
-    (!q||[l.code,l.title,l.description,l.penalty,categoryOf(l)]
-      .join(' ').toLocaleLowerCase().includes(q))
+  let visible = laws.filter(l =>
+    (activeCategory === 'الكل' || categoryOf(l) === activeCategory) &&
+    (!q || [
+      l.code,
+      l.title,
+      l.description,
+      l.penalty,
+      categoryOf(l)
+    ].join(' ').toLocaleLowerCase().includes(q))
   );
 
-  el('law-list').innerHTML=visible.map(l=>
-    `<button class="law-item ${selected.has(l.code)?'selected':''}" data-code="${escapeHtml(l.code)}">
+  el('law-list').innerHTML = visible.map(l =>
+    `<button class="law-item ${selected.has(l.code) ? 'selected' : ''}" data-code="${escapeHtml(l.code)}">
       <span>
         <b class="law-code">${escapeHtml(l.code)}</b>
         <span class="law-title">${escapeHtml(l.title)}</span>
         <small class="law-category">${escapeHtml(categoryOf(l))}</small>
       </span>
-      <span class="law-plus">${selected.has(l.code)?'✓':'+'}</span>
+      <span class="law-plus">${selected.has(l.code) ? '✓' : '+'}</span>
     </button>`
-  ).join('')||'<p class="muted">لا توجد نتائج مطابقة.</p>';
+  ).join('') || '<p class="muted">لا توجد نتائج مطابقة.</p>';
 
-  el('law-list').querySelectorAll('button').forEach(b=>{
-    b.onclick=()=>toggle(b.dataset.code);
+  el('law-list').querySelectorAll('button').forEach(b => {
+    b.onclick = () => toggle(b.dataset.code);
   });
 
   renderSelected();
   updateResponse();
 }
 
-function toggle(code){
-  selected.has(code)?selected.delete(code):selected.add(code);
+// اختيار وإلغاء اختيار القانون
+function toggle(code) {
+  selected.has(code)
+    ? selected.delete(code)
+    : selected.add(code);
+
   render();
 }
 
-function renderSelected(){
-  let arr=[...selected];
+// عرض القوانين المختارة
+function renderSelected() {
+  let arr = [...selected];
 
-  el('total-count').textContent=`${arr.length} مادة محددة`;
+  el('total-count').textContent = `${arr.length} مادة محددة`;
 
-  el('selected-laws').className='chips'+(arr.length?'':' empty');
+  el('selected-laws').className =
+    'chips' + (arr.length ? '' : ' empty');
 
-  el('selected-laws').innerHTML=arr.length
-    ?arr.map(code=>
+  el('selected-laws').innerHTML = arr.length
+    ? arr.map(code =>
       `<span class="chip">${escapeHtml(code)} <button aria-label="إزالة ${escapeHtml(code)}" data-remove="${escapeHtml(code)}">×</button></span>`
     ).join('')
-    :'لم تختر أي مادة بعد.';
+    : 'لم تختر أي مادة بعد.';
 
-  el('selected-laws').querySelectorAll('[data-remove]').forEach(b=>{
-    b.onclick=()=>toggle(b.dataset.remove);
+  el('selected-laws').querySelectorAll('[data-remove]').forEach(b => {
+    b.onclick = () => toggle(b.dataset.remove);
   });
 }
 
-function updateResponse(){
-  let chosen=laws.filter(l=>selected.has(l.code));
+// توليد الرد الرسمي
+function updateResponse() {
+  let chosen = laws.filter(l => selected.has(l.code));
 
-  if(!chosen.length){
-    el('response').value='';
+  if (!chosen.length) {
+    el('response').value = '';
     return;
   }
 
-  let player=el('player-name').value.trim();
-  let admin=el('admin-name').value.trim();
-  let notes=el('case-notes').value.trim();
-
-  let out=[
-    'السلام عليكم ورحمة الله وبركاته،',
+  let out = [
+    'بعد مراجعة شاملة ودقيقة لكافة الأدلة المقدمة، تبين وجود مخالفة واضحة ولا يوجد بها مجال للشك تستوجب اتخاذ إجراء إداري بحقك وفقاً للـ ' + RULES_URL,
+    'وهي التالية:',
     ''
   ];
 
-  if(player)out.push(`اللاعب: ${player}`,'');
-
-  out.push(
-    'بعد مراجعة الحالة والأدلة، تبيّن وجود المخالفات التالية:',
-    ''
-  );
-
-  chosen.forEach((l,i)=>{
+  // إضافة كل مخالفة بشكل مستقل
+  chosen.forEach(l => {
     out.push(
-      `${i+1}. ${l.code} — ${l.title}`,
-      `نص القانون: ${l.description}`,
-      `العقوبة: ${l.penalty}`
+      `**[ ${l.code} ]**`,
+      '```' + (l.description || l.title || ''),
+      `العقوبة : ${l.penalty || 'غير محددة'}`,
+      '```',
+      ''
     );
-
-    if(l.note)out.push(`ملاحظة: ${l.note}`);
-
-    out.push('');
   });
 
-  if(notes)out.push(`تفاصيل إضافية: ${notes}`,'');
-
+  // الخاتمة الرسمية
   out.push(
-    'يرجى الالتزام بقوانين المدينة وعدم تكرار المخالفة.',
-    ''
+    'نأمل منك مستقبلاً الالتزام بقوانين OneState RP وتجنب ارتكاب أي مخالفات قد تؤدي إلى فرض عقوبات جديدة.',
+    'شكرًا لتفهمك، ونتمنى لك تجربة ممتعة.'
   );
 
-  if(admin)out.push(`الإداري المسؤول: ${admin}`);
-
-  // لا تتم إضافة تذكير توثيق العقوبة أو رابط قناة MESA Punishments.
-
-  if(chosen.some(l=>l.category==='MESA')){
+  // تنبيه التعليمات الداخلية
+  if (chosen.some(l => l.category === 'MESA')) {
     out.push(
       '',
       'تنبيه: تتضمن هذه النتيجة تعليمات داخلية خاصة بـ MESA وليست نصاً رسمياً عاماً من OneState.'
     );
   }
 
-  el('response').value=out.join('\n');
+  el('response').value = out.join('\n');
 }
 
-el('search').addEventListener('input',render);
+// البحث
+el('search').addEventListener('input', render);
 
-['player-name','admin-name','case-notes'].forEach(id=>
-  el(id).addEventListener('input',updateResponse)
-);
+// تحديث الرد عند تغيير البيانات
+['player-name', 'admin-name', 'case-notes'].forEach(id => {
+  const field = el(id);
+  if (field) {
+    field.addEventListener('input', updateResponse);
+  }
+});
 
-el('clear-selection').onclick=()=>{
+// مسح القوانين المختارة
+el('clear-selection').onclick = () => {
   selected.clear();
   render();
 };
 
-el('copy-response').onclick=async()=>{
-  let text=el('response').value;
+// نسخ الرد
+el('copy-response').onclick = async () => {
+  let text = el('response').value;
 
-  if(!text){
-    el('copy-status').textContent='اختر مادة واحدة على الأقل أولاً.';
+  if (!text) {
+    el('copy-status').textContent =
+      'اختر مادة واحدة على الأقل أولاً.';
     return;
   }
 
-  try{
+  try {
     await navigator.clipboard.writeText(text);
-    el('copy-status').textContent='تم نسخ الرد بالكامل. الصقه الآن في Discord.';
-  }catch(e){
+
+    el('copy-status').textContent =
+      'تم نسخ الرد بالكامل. الصقه الآن في Discord.';
+
+  } catch (e) {
     el('response').focus();
     el('response').select();
 
-    let ok=document.execCommand('copy');
+    let ok = document.execCommand('copy');
 
-    el('copy-status').textContent=ok
-      ?'تم نسخ الرد بالكامل.'
-      :'تعذر النسخ التلقائي؛ حدد النص وانسخه يدوياً.';
+    el('copy-status').textContent = ok
+      ? 'تم نسخ الرد بالكامل.'
+      : 'تعذر النسخ التلقائي؛ حدد النص وانسخه يدوياً.';
   }
 };
