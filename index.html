@@ -1,33 +1,178 @@
+
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101522"><meta name="description" content="MESA BOT - مساعد تجهيز ردود تذاكر OneState">
-  <title>MESA BOT | Ticket Assistant</title><link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101522">
+  <meta name="description" content="MESA BOT - مساعد تجهيز ردود تذاكر OneState">
+
+  <title>MESA BOT | Ticket Assistant</title>
+
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
+
 <body>
-<header class="topbar"><a class="brand" href="#top"><span class="brand-mark">M</span><span><b>MESA BOT</b><small>ONE STATE · ADMIN TOOLS</small></span></a><span class="top-pill">TICKET ASSISTANT</span></header>
+
+<header class="topbar">
+  <a class="brand" href="#top">
+    <span class="brand-mark">M</span>
+    <span>
+      <b>MESA BOT</b>
+      <small>ONE STATE · ADMIN TOOLS</small>
+    </span>
+  </a>
+
+  <span class="top-pill">TICKET ASSISTANT</span>
+</header>
+
 <main id="top">
-  <section class="hero"><div class="eyebrow">MESA COMMUNITY TOOLS</div><h1>جهّز ردّك الإداري <em>بسهولة.</em></h1><p>ابحث عن المخالفة بالكود أو الاسم، اختر مادة أو أكثر، وشاهد الرد النهائي جاهزاً للنسخ إلى Discord.</p></section>
-  <section class="layout">
-    <section class="panel laws-panel">
-      <div class="panel-head"><div><span class="step">01</span><h2>اختيار مواد المخالفة</h2></div><span id="total-count" class="muted">0 مادة</span></div>
-      <input id="search" class="search" type="search" placeholder="ابحث بالكود أو اسم القانون أو الوصف..." autocomplete="off">
-      <div id="categories" class="categories"></div>
-      <div id="law-list" class="law-list"><p class="muted">جارٍ تحميل قاعدة القوانين...</p></div>
-      <div class="chosen-area"><div class="panel-head compact"><h3>المواد المختارة</h3><button id="clear-selection" class="link-button">مسح الكل</button></div><div id="selected-laws" class="chips empty">لم تختر أي مادة بعد.</div></div>
-    </section>
-    <section class="panel response-panel">
-      <div class="panel-head"><div><span class="step">02</span><h2>تجهيز الرد</h2></div><span class="live">LIVE PREVIEW</span></div>
-      <label for="player-name">اسم اللاعب <small>اختياري</small></label><input id="player-name" placeholder="اسم اللاعب أو اتركه فارغاً">
-      <label for="admin-name">اسم الإداري <small>اختياري</small></label><input id="admin-name" placeholder="اسمك الإداري">
-      <label for="case-notes">تفاصيل إضافية <small>اختياري</small></label><textarea id="case-notes" rows="3" placeholder="مثلاً: تفاصيل الحالة أو توضيح سبب تطبيق المادة..."></textarea>
-      <label for="response">معاينة الرد النهائي</label><textarea id="response" class="response-output" rows="18" readonly placeholder="اختر مادة من القائمة حتى يظهر الرد هنا..."></textarea>
-      <button id="copy-response" class="copy-button">نسخ الرد بالكامل <span>↗</span></button><div id="copy-status" class="copy-status" aria-live="polite">سيظهر الرد هنا بعد اختيار المواد.</div>
-    </section>
+
+  <section class="hero">
+    <div class="eyebrow">MESA COMMUNITY TOOLS</div>
+
+    <h1>جهّز ردّك الإداري <em>بسهولة.</em></h1>
+
+    <p>
+      ابحث عن المخالفة بالكود أو الاسم، اختر مادة أو أكثر،
+      وشاهد الرد النهائي جاهزاً للنسخ إلى Discord.
+    </p>
   </section>
-  <aside class="notice"><b>تنبيه إداري:</b> هذه الأداة تساعد في تجهيز صياغة الرد فقط. راجع الأدلة وسياق الحالة وحدد العقوبة وفق القواعد والتعليمات المعتمدة قبل إرسالها. مواد MESA الداخلية معروضة بشكل منفصل عن قوانين OneState العامة.</aside>
-  <footer><span>MESA BOT · Made for MESA community</span><a href="https://chillbase.helpshift.com/hc/ar/3-onestate/faq/15-onestate-game-rules/?p=web/" target="_blank" rel="noopener">الرجوع إلى مصدر قوانين OneState ↗</a></footer>
+
+  <section class="layout">
+
+    <section class="panel laws-panel">
+
+      <div class="panel-head">
+        <div>
+          <span class="step">01</span>
+          <h2>اختيار مواد المخالفة</h2>
+        </div>
+
+        <span id="total-count" class="muted">0 مادة</span>
+      </div>
+
+      <input
+        id="search"
+        class="search"
+        type="search"
+        placeholder="ابحث بالكود أو اسم القانون أو الوصف..."
+        autocomplete="off"
+      >
+
+      <div id="categories" class="categories"></div>
+
+      <div id="law-list" class="law-list">
+        <p class="muted">جارٍ تحميل قاعدة القوانين...</p>
+      </div>
+
+      <div class="chosen-area">
+
+        <div class="panel-head compact">
+          <h3>المواد المختارة</h3>
+          <button id="clear-selection" class="link-button">
+            مسح الكل
+          </button>
+        </div>
+
+        <div id="selected-laws" class="chips empty">
+          لم تختر أي مادة بعد.
+        </div>
+
+      </div>
+    </section>
+
+    <section class="panel response-panel">
+
+      <div class="panel-head">
+        <div>
+          <span class="step">02</span>
+          <h2>تجهيز الرد</h2>
+        </div>
+
+        <span class="live">LIVE PREVIEW</span>
+      </div>
+
+      <label for="player-name">
+        اسم اللاعب <small>اختياري</small>
+      </label>
+
+      <input
+        id="player-name"
+        type="text"
+        placeholder="اسم اللاعب أو اتركه فارغاً"
+        autocomplete="off"
+      >
+
+      <label for="admin-name">
+        اسم الإداري <small>اختياري</small>
+      </label>
+
+      <input
+        id="admin-name"
+        type="text"
+        placeholder="اسمك الإداري"
+        autocomplete="off"
+      >
+
+      <label for="case-notes">
+        تفاصيل إضافية <small>اختياري</small>
+      </label>
+
+      <textarea
+        id="case-notes"
+        rows="3"
+        placeholder="مثلاً: تفاصيل الحالة أو توضيح سبب تطبيق المادة..."
+      ></textarea>
+
+      <label for="response">معاينة الرد النهائي</label>
+
+      <textarea
+        id="response"
+        class="response-output"
+        rows="18"
+        readonly
+        placeholder="اختر مادة من القائمة حتى يظهر الرد هنا..."
+      ></textarea>
+
+      <button id="copy-response" class="copy-button">
+        نسخ الرد بالكامل <span>↗</span>
+      </button>
+
+      <div
+        id="copy-status"
+        class="copy-status"
+        aria-live="polite"
+      >
+        سيظهر الرد هنا بعد اختيار المواد.
+      </div>
+
+    </section>
+
+  </section>
+
+  <aside class="notice">
+    <b>تنبيه إداري:</b>
+    هذه الأداة تساعد في تجهيز صياغة الرد فقط.
+    راجع الأدلة وسياق الحالة وحدد العقوبة وفق القواعد والتعليمات المعتمدة قبل إرسالها.
+    مواد MESA الداخلية معروضة بشكل منفصل عن قوانين OneState العامة.
+  </aside>
+
+  <footer>
+    <span>MESA BOT · Made for MESA community</span>
+
+    <a
+      href="https://chillbase.helpshift.com/hc/ar/3-onestate/faq/15-onestate-game-rules/?p=web/"
+      target="_blank"
+      rel="noopener"
+    >
+      الرجوع إلى مصدر قوانين OneState ↗
+    </a>
+  </footer>
+
 </main>
-<script src="app.js"></script>
-</body></html>
+
+<script src="app.js?v=5"></script>
+
+</body>
+</html>
