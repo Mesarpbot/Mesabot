@@ -21,14 +21,14 @@ const categoryNames = {
 const RULES_URL =
   'https://discord.com/channels/1272600775331414159/1272600775570358357';
 
-// تحميل القوانين
+// تحميل قاعدة القوانين
 fetch('data.json')
-  .then(r => {
-    if (!r.ok) throw Error('data');
-    return r.json();
+  .then(response => {
+    if (!response.ok) throw new Error('data');
+    return response.json();
   })
   .then(data => {
-    laws = data.laws || [];
+    laws = Array.isArray(data.laws) ? data.laws : [];
     drawCategories();
     render();
   })
@@ -37,67 +37,83 @@ fetch('data.json')
       '<p class="muted">تعذر تحميل القوانين. تأكد من رفع ملف data.json بجانب index.html.</p>';
   });
 
-// تحديد اسم التصنيف
-function categoryOf(l) {
-  return categoryNames[l.category] || l.category || 'أخرى';
+// أسماء التصنيفات
+function categoryOf(law) {
+  return categoryNames[law.category] || law.category || 'أخرى';
+}
+
+// حماية النصوص المعروضة في HTML
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
 }
 
 // إنشاء التصنيفات
 function drawCategories() {
-  let cats = ['الكل', ...new Set(laws.map(categoryOf))];
+  const categories = [
+    'الكل',
+    ...new Set(laws.map(categoryOf))
+  ];
 
-  el('categories').innerHTML = cats.map(c =>
-    `<button class="category ${c === activeCategory ? 'active' : ''}" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+  el('categories').innerHTML = categories.map(category =>
+    `<button class="category ${category === activeCategory ? 'active' : ''}"
+      data-category="${escapeHtml(category)}">
+      ${escapeHtml(category)}
+    </button>`
   ).join('');
 
-  el('categories').querySelectorAll('button').forEach(b => {
-    b.onclick = () => {
-      activeCategory = b.dataset.category;
+  el('categories').querySelectorAll('button').forEach(button => {
+    button.onclick = () => {
+      activeCategory = button.dataset.category;
       drawCategories();
       render();
     };
   });
 }
 
-// حماية النصوص
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[c]));
-}
-
 // عرض القوانين
 function render() {
-  let q = el('search').value.trim().toLocaleLowerCase();
+  const searchField = el('search');
+  const query = searchField.value.trim().toLocaleLowerCase();
 
-  let visible = laws.filter(l =>
-    (activeCategory === 'الكل' || categoryOf(l) === activeCategory) &&
-    (!q || [
-      l.code,
-      l.title,
-      l.description,
-      l.penalty,
-      categoryOf(l)
-    ].join(' ').toLocaleLowerCase().includes(q))
-  );
+  const visible = laws.filter(law => {
+    const matchesCategory =
+      activeCategory === 'الكل' ||
+      categoryOf(law) === activeCategory;
 
-  el('law-list').innerHTML = visible.map(l =>
-    `<button class="law-item ${selected.has(l.code) ? 'selected' : ''}" data-code="${escapeHtml(l.code)}">
+    const searchableText = [
+      law.code,
+      law.title,
+      law.description,
+      law.penalty,
+      categoryOf(law)
+    ].join(' ').toLocaleLowerCase();
+
+    return matchesCategory &&
+      (!query || searchableText.includes(query));
+  });
+
+  el('law-list').innerHTML = visible.map(law =>
+    `<button class="law-item ${selected.has(law.code) ? 'selected' : ''}"
+      data-code="${escapeHtml(law.code)}">
       <span>
-        <b class="law-code">${escapeHtml(l.code)}</b>
-        <span class="law-title">${escapeHtml(l.title)}</span>
-        <small class="law-category">${escapeHtml(categoryOf(l))}</small>
+        <b class="law-code">${escapeHtml(law.code)}</b>
+        <span class="law-title">${escapeHtml(law.title)}</span>
+        <small class="law-category">${escapeHtml(categoryOf(law))}</small>
       </span>
-      <span class="law-plus">${selected.has(l.code) ? '✓' : '+'}</span>
+      <span class="law-plus">
+        ${selected.has(law.code) ? '✓' : '+'}
+      </span>
     </button>`
   ).join('') || '<p class="muted">لا توجد نتائج مطابقة.</p>';
 
-  el('law-list').querySelectorAll('button').forEach(b => {
-    b.onclick = () => toggle(b.dataset.code);
+  el('law-list').querySelectorAll('button').forEach(button => {
+    button.onclick = () => toggle(button.dataset.code);
   });
 
   renderSelected();
@@ -106,82 +122,109 @@ function render() {
 
 // اختيار وإلغاء اختيار القانون
 function toggle(code) {
-  selected.has(code)
-    ? selected.delete(code)
-    : selected.add(code);
+  if (selected.has(code)) {
+    selected.delete(code);
+  } else {
+    selected.add(code);
+  }
 
   render();
 }
 
-// عرض القوانين المختارة
+// عرض المواد المختارة
 function renderSelected() {
-  let arr = [...selected];
+  const selectedCodes = [...selected];
 
-  el('total-count').textContent = `${arr.length} مادة محددة`;
+  el('total-count').textContent =
+    `${selectedCodes.length} مادة محددة`;
 
   el('selected-laws').className =
-    'chips' + (arr.length ? '' : ' empty');
+    'chips' + (selectedCodes.length ? '' : ' empty');
 
-  el('selected-laws').innerHTML = arr.length
-    ? arr.map(code =>
-      `<span class="chip">${escapeHtml(code)} <button aria-label="إزالة ${escapeHtml(code)}" data-remove="${escapeHtml(code)}">×</button></span>`
-    ).join('')
+  el('selected-laws').innerHTML = selectedCodes.length
+    ? selectedCodes.map(code =>
+        `<span class="chip">
+          ${escapeHtml(code)}
+          <button aria-label="إزالة ${escapeHtml(code)}"
+            data-remove="${escapeHtml(code)}">×</button>
+        </span>`
+      ).join('')
     : 'لم تختر أي مادة بعد.';
 
-  el('selected-laws').querySelectorAll('[data-remove]').forEach(b => {
-    b.onclick = () => toggle(b.dataset.remove);
+  el('selected-laws').querySelectorAll('[data-remove]').forEach(button => {
+    button.onclick = () => toggle(button.dataset.remove);
   });
 }
 
-// توليد الرد الرسمي
+// قراءة الحقول الاختيارية
+function getOptionalValue(id) {
+  const field = el(id);
+  return field ? field.value.trim() : '';
+}
+
+// توليد الرسالة الرسمية
 function updateResponse() {
-  let chosen = laws.filter(l => selected.has(l.code));
+  const chosen = laws.filter(law => selected.has(law.code));
 
   if (!chosen.length) {
     el('response').value = '';
     return;
   }
 
-  // قراءة البيانات الاختيارية
-  const player = el('player-name')?.value.trim() || '';
-  const notes = el('case-notes')?.value.trim() || '';
+  // بيانات اللاعب والملاحظات
+  const playerName = getOptionalValue('player-name');
+  const additionalNotes = getOptionalValue('case-notes');
 
-  let out = [];
+  const out = [];
 
   // المقدمة الرسمية
   out.push(
-    'بعد مراجعة شاملة ودقيقة لكافة الأدلة المقدمة، تبيّن وجود مخالفة واضحة تستوجب اتخاذ إجراء إداري بحقك وفقاً لقوانين OneState RP:',
+    'بعد مراجعة شاملة ودقيقة لكافة الأدلة المقدمة، تبيّن وجود مخالفة واضحة ولا يوجد بها مجال للشك تستوجب اتخاذ إجراء إداري بحقك وفقاً للـ',
     RULES_URL,
+    'وهي التالية:',
     ''
   );
 
-  // اسم اللاعب: يظهر فقط عند إدخاله
-  if (player) {
+  // اسم اللاعب - اختياري
+  if (playerName) {
     out.push(
-      `**اللاعب:** ${player}`,
+      '**اللاعب:**',
+      playerName,
       ''
     );
   }
 
-  // المخالفات المختارة
-  out.push('**المخالفات المسجلة:**', '');
+  // عنوان المخالفات
+  out.push(
+    '**المخالفات المسجلة:**',
+    ''
+  );
 
-  chosen.forEach(l => {
+  // عرض كل مخالفة بشكل مستقل
+  chosen.forEach(law => {
     out.push(
-      `**[ ${l.code} ]**`,
+      `**[ ${law.code} ]**`,
       '```',
-      l.description || l.title || '',
-      `العقوبة : ${l.penalty || 'غير محددة'}`,
+      law.description || law.title || 'لا يوجد وصف متاح.',
+      `العقوبة : ${law.penalty || 'غير محددة.'}`
+    );
+
+    // الملاحظة المرتبطة بالقانون إن وجدت
+    if (law.note) {
+      out.push(`ملاحظة : ${law.note}`);
+    }
+
+    out.push(
       '```',
       ''
     );
   });
 
-  // الملاحظات الإضافية: تظهر فقط عند إدخالها
-  if (notes) {
+  // الملاحظات الإضافية - اختيارية
+  if (additionalNotes) {
     out.push(
       '**ملاحظات إضافية:**',
-      notes,
+      additionalNotes,
       ''
     );
   }
@@ -192,22 +235,27 @@ function updateResponse() {
     'شكرًا لتفهمك، ونتمنى لك تجربة ممتعة.'
   );
 
-  // تنبيه خاص بالقوانين الداخلية
-  if (chosen.some(l => l.category === 'MESA')) {
+  // تنبيه خاص بالتعليمات الداخلية
+  if (chosen.some(law => law.category === 'MESA')) {
     out.push(
       '',
       'تنبيه: تتضمن هذه النتيجة تعليمات داخلية خاصة بـ MESA وليست نصاً رسمياً عاماً من OneState.'
     );
   }
 
+  // وضع النتيجة في مربع الرد
   el('response').value = out.join('\n');
 }
 
 // البحث
 el('search').addEventListener('input', render);
 
-// تحديث الرد عند تغيير الحقول
-['player-name', 'case-notes'].forEach(id => {
+// تحديث الرد عند تعديل الحقول
+[
+  'player-name',
+  'case-notes',
+  'admin-name'
+].forEach(id => {
   const field = el(id);
 
   if (field) {
@@ -215,35 +263,35 @@ el('search').addEventListener('input', render);
   }
 });
 
-// مسح القوانين المختارة
+// مسح جميع القوانين المختارة
 el('clear-selection').onclick = () => {
   selected.clear();
   render();
 };
 
-// نسخ الرد
+// نسخ الرد بالكامل
 el('copy-response').onclick = async () => {
-  let text = el('response').value;
+  const responseText = el('response').value;
 
-  if (!text) {
+  if (!responseText) {
     el('copy-status').textContent =
       'اختر مادة واحدة على الأقل أولاً.';
     return;
   }
 
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(responseText);
 
     el('copy-status').textContent =
       'تم نسخ الرد بالكامل. الصقه الآن في Discord.';
 
-  } catch (e) {
+  } catch (error) {
     el('response').focus();
     el('response').select();
 
-    let ok = document.execCommand('copy');
+    const copied = document.execCommand('copy');
 
-    el('copy-status').textContent = ok
+    el('copy-status').textContent = copied
       ? 'تم نسخ الرد بالكامل.'
       : 'تعذر النسخ التلقائي؛ حدد النص وانسخه يدوياً.';
   }
