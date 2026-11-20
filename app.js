@@ -142,22 +142,49 @@ function updateResponse() {
     return;
   }
 
-  let out = [
-    'بعد مراجعة شاملة ودقيقة لكافة الأدلة المقدمة، تبين وجود مخالفة واضحة ولا يوجد بها مجال للشك تستوجب اتخاذ إجراء إداري بحقك وفقاً للـ ' + RULES_URL,
-    'وهي التالية:',
-    ''
-  ];
+  // قراءة البيانات الاختيارية
+  const player = el('player-name')?.value.trim() || '';
+  const notes = el('case-notes')?.value.trim() || '';
 
-  // إضافة كل مخالفة بشكل مستقل
+  let out = [];
+
+  // المقدمة الرسمية
+  out.push(
+    'بعد مراجعة شاملة ودقيقة لكافة الأدلة المقدمة، تبيّن وجود مخالفة واضحة تستوجب اتخاذ إجراء إداري بحقك وفقاً لقوانين OneState RP:',
+    RULES_URL,
+    ''
+  );
+
+  // اسم اللاعب: يظهر فقط عند إدخاله
+  if (player) {
+    out.push(
+      `**اللاعب:** ${player}`,
+      ''
+    );
+  }
+
+  // المخالفات المختارة
+  out.push('**المخالفات المسجلة:**', '');
+
   chosen.forEach(l => {
     out.push(
       `**[ ${l.code} ]**`,
-      '```' + (l.description || l.title || ''),
+      '```',
+      l.description || l.title || '',
       `العقوبة : ${l.penalty || 'غير محددة'}`,
       '```',
       ''
     );
   });
+
+  // الملاحظات الإضافية: تظهر فقط عند إدخالها
+  if (notes) {
+    out.push(
+      '**ملاحظات إضافية:**',
+      notes,
+      ''
+    );
+  }
 
   // الخاتمة الرسمية
   out.push(
@@ -165,7 +192,7 @@ function updateResponse() {
     'شكرًا لتفهمك، ونتمنى لك تجربة ممتعة.'
   );
 
-  // تنبيه التعليمات الداخلية
+  // تنبيه خاص بالقوانين الداخلية
   if (chosen.some(l => l.category === 'MESA')) {
     out.push(
       '',
@@ -179,9 +206,10 @@ function updateResponse() {
 // البحث
 el('search').addEventListener('input', render);
 
-// تحديث الرد عند تغيير البيانات
-['player-name', 'admin-name', 'case-notes'].forEach(id => {
+// تحديث الرد عند تغيير الحقول
+['player-name', 'case-notes'].forEach(id => {
   const field = el(id);
+
   if (field) {
     field.addEventListener('input', updateResponse);
   }
